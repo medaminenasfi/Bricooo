@@ -254,20 +254,20 @@ export function EstimationWizard() {
 
   if (submitted) {
     return (
-      <div className="min-h-[60vh] flex items-center justify-center px-6">
-        <div className="text-center max-w-md">
-          <div className="w-16 h-16 rounded-full bg-green-50 flex items-center justify-center mx-auto mb-6">
+      <div className="min-h-[60vh] flex items-center justify-center px-4 sm:px-6">
+        <div className="text-center max-w-sm sm:max-w-md">
+          <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-green-50 flex items-center justify-center mx-auto mb-4 sm:mb-6">
             <Check size={28} className="text-green-600" />
           </div>
-          <h2 className="font-serif text-2xl md:text-3xl font-bold text-foreground">
+          <h2 className="font-serif text-xl sm:text-2xl md:text-3xl font-bold text-foreground">
             Demande envoyée
           </h2>
-          <p className="mt-3 text-muted-foreground leading-relaxed">
+          <p className="mt-3 text-sm sm:text-base text-muted-foreground leading-relaxed">
             {"Merci pour votre confiance. Notre équipe vous contactera rapidement avec une estimation structurée et détaillée."}
           </p>
           <Link
             href="/"
-            className="mt-6 inline-flex items-center justify-center bg-primary text-primary-foreground font-medium text-sm tracking-wide px-6 py-3 rounded-[10px] hover:bg-[#0A1F35] transition-all duration-300"
+            className="mt-4 sm:mt-6 inline-flex w-full sm:w-auto items-center justify-center bg-primary text-primary-foreground font-medium text-sm tracking-wide px-6 py-3 rounded-[10px] hover:bg-[#0A1F35] transition-all duration-300"
           >
             {"Retour à l'accueil"}
           </Link>
@@ -277,24 +277,24 @@ export function EstimationWizard() {
   }
 
   return (
-    <div className="min-h-screen bg-background py-12 md:py-20">
-      <div className="mx-auto max-w-[720px] px-6">
+    <div className="min-h-screen bg-background py-8 sm:py-12 md:py-20">
+      <div className="mx-auto max-w-[720px] px-4 sm:px-6">
         {/* Hero text */}
-        <div className="text-center mb-10">
-          <h1 className="font-serif text-3xl md:text-[40px] md:leading-[1.15] font-bold text-foreground text-balance">
+        <div className="text-center mb-8 sm:mb-10">
+          <h1 className="font-serif text-2xl sm:text-3xl md:text-[40px] md:leading-[1.15] font-bold text-foreground text-balance">
             Parlez-nous de votre projet.
           </h1>
-          <p className="mt-3 text-base text-muted-foreground leading-relaxed max-w-lg mx-auto">
+          <p className="mt-3 text-sm sm:text-base text-muted-foreground leading-relaxed max-w-lg mx-auto">
             {"Plus nous comprenons votre besoin, plus notre estimation sera précise. Toutes les informations partagées restent confidentielles."}
           </p>
         </div>
 
         {/* Progress bar */}
-        <div className="flex items-center justify-between mb-10 relative">
+        <div className="flex items-center justify-between mb-8 sm:mb-10 relative">
           {stepsLabels.map((label, i) => (
             <div key={label} className="flex flex-col items-center relative z-10 flex-1">
               <div
-                className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-all duration-300 ${
+                className={`w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs sm:text-sm font-semibold transition-all duration-300 ${
                   i <= step
                     ? "bg-primary text-primary-foreground"
                     : "bg-muted text-muted-foreground"

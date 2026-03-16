@@ -46,11 +46,11 @@ export function Hero() {
       />
 
       {/* Content */}
-      <div className="relative z-10 mx-auto max-w-[1280px] w-full px-6 py-28 sm:py-32 md:py-0">
-        <div className="max-w-xl md:text-left text-center mx-auto md:mx-0">
+      <div className="relative z-10 mx-auto max-w-[1280px] w-full px-4 sm:px-6 lg:px-8 py-20 sm:py-24 md:py-28 lg:py-0">
+        <div className="max-w-xl lg:max-w-2xl text-center md:text-left mx-auto md:mx-0">
           {/* H1 */}
           <h1
-            className={`font-serif text-4xl md:text-[56px] md:leading-[1.1] font-bold text-primary-foreground text-balance ${
+            className={`font-serif text-3xl sm:text-4xl md:text-5xl lg:text-[56px] lg:leading-[1.1] font-bold text-primary-foreground text-balance ${
               isVisible ? "animate-fade-up" : "opacity-0"
             }`}
           >
@@ -59,14 +59,14 @@ export function Hero() {
 
           {/* Paragraph */}
           <p
-            className={`mt-6 text-base md:text-lg text-primary-foreground/90 leading-relaxed ${
+            className={`mt-4 sm:mt-6 text-sm sm:text-base md:text-lg text-primary-foreground/90 leading-relaxed ${
               isVisible ? "animate-fade-up delay-100" : "opacity-0"
             }`}
           >
             {"Rénover un espace engage du budget, du temps et de la confiance. Chez HelloBrico, chaque projet suit un système clair : étude technique, devis détaillé, planification précise et exécution supervisée."}
           </p>
           <p
-            className={`mt-2 text-base md:text-lg text-primary-foreground/90 leading-relaxed font-medium ${
+            className={`mt-2 text-sm sm:text-base md:text-lg text-primary-foreground/90 leading-relaxed font-medium ${
               isVisible ? "animate-fade-up delay-100" : "opacity-0"
             }`}
           >
@@ -75,7 +75,7 @@ export function Hero() {
 
           {/* Bullet reassurance */}
           <div
-            className={`mt-6 flex flex-col md:flex-row gap-3 md:gap-6 md:justify-start justify-center ${
+            className={`mt-6 grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-row gap-3 lg:gap-6 justify-center lg:justify-start ${
               isVisible ? "animate-fade-up delay-200" : "opacity-0"
             }`}
           >
@@ -83,10 +83,10 @@ export function Hero() {
               (item) => (
                 <div
                   key={item}
-                  className="flex items-center gap-2 text-sm text-primary-foreground/80"
+                  className="flex items-center gap-2 text-xs sm:text-sm text-primary-foreground/80"
                 >
                   <Check size={14} className="text-primary-foreground/60 shrink-0" />
-                  <span>{item}</span>
+                  <span className="text-left">{item}</span>
                 </div>
               )
             )}
@@ -94,7 +94,7 @@ export function Hero() {
 
           {/* CTA */}
           <div
-            className={`mt-8 flex flex-col items-center md:items-start gap-2 ${
+            className={`mt-6 sm:mt-8 flex flex-col items-center md:items-start gap-2 ${
               isVisible ? "animate-fade-up delay-200" : "opacity-0"
             }`}
           >
@@ -113,39 +113,21 @@ export function Hero() {
 
       {/* Badge 5/5 */}
       <div
-        className={`hidden md:block absolute bottom-20 right-[12%] z-10 ${
+        className={`absolute bottom-8 right-4 sm:bottom-12 sm:right-6 md:bottom-20 md:right-[12%] lg:bottom-24 lg:right-[8%] z-10 ${
           isVisible ? "animate-fade-up delay-400" : "opacity-0"
         }`}
       >
-        <div className="bg-card/85 backdrop-blur-sm rounded-2xl shadow-lg px-5 py-4">
-          <div className="flex gap-0.5">
+        <div className="bg-card/85 backdrop-blur-sm rounded-xl sm:rounded-2xl shadow-lg px-4 py-3 sm:px-5 sm:py-4 max-w-[160px] sm:max-w-none">
+          <div className="flex gap-0.5 justify-center sm:justify-start">
             {[...Array(5)].map((_, i) => (
               <Star key={i} size={16} className="fill-amber-400 text-amber-400" />
             ))}
           </div>
-          <p className="text-lg font-bold text-foreground mt-1">5.0/5</p>
-          <p className="text-xs text-muted-foreground">Avis clients vérifiés</p>
+          <p className="text-base sm:text-lg font-bold text-foreground mt-1 text-center sm:text-left">5.0/5</p>
+          <p className="text-xs text-muted-foreground text-center sm:text-left">Avis clients vérifiés</p>
         </div>
       </div>
 
-      {/* Mobile badge */}
-      <div
-        className={`md:hidden absolute bottom-8 left-1/2 -translate-x-1/2 z-10 ${
-          isVisible ? "animate-fade-up delay-400" : "opacity-0"
-        }`}
-      >
-        <div className="max-w-[calc(100vw-2rem)] bg-card/85 backdrop-blur-sm rounded-2xl shadow-lg px-4 py-3 flex items-center gap-3">
-          <div className="flex gap-0.5">
-            {[...Array(5)].map((_, i) => (
-              <Star key={i} size={14} className="fill-amber-400 text-amber-400" />
-            ))}
-          </div>
-          <div>
-            <span className="text-sm font-bold text-foreground">5.0/5</span>
-            <span className="text-xs text-muted-foreground ml-1.5">Avis vérifiés</span>
-          </div>
-        </div>
-      </div>
-    </section>
+          </section>
   )
 }
