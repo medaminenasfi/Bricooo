@@ -32,6 +32,7 @@ const ALLOWED_ADMIN_ROUTES: Record<AdminRole, string[]> = {
   ADMIN: [
     "/admin",
     "/admin/leads",
+    "/admin/partners",
     "/admin/projects",
     "/admin/quotes",
     "/admin/magazine",
