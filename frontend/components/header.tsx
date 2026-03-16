@@ -70,17 +70,21 @@ export function Header({ forceSolid = false }: HeaderProps) {
           ))}
         </nav>
 
-        {/* Desktop CTA */}
-        <Link
-          href="/estimation"
-          className={`hidden md:inline-flex text-sm font-medium tracking-wide px-5 py-2.5 rounded-[10px] transition-all duration-300 ${
-            forceSolid || scrolled
-              ? "bg-primary text-primary-foreground hover:bg-[#0A1F35]"
-              : "border border-primary-foreground/40 text-primary-foreground hover:bg-primary-foreground/10"
-          }`}
-        >
-          Estimer mes travaux
-        </Link>
+        {/* Desktop CTAs */}
+        <div className="hidden md:flex items-center gap-3">
+          <Link
+            href="/partenaire"
+            className="bg-white text-primary hover:bg-gray-100 text-sm font-medium tracking-wide px-5 py-2.5 rounded-[10px] transition-all duration-300"
+          >
+            Devenir partenaire
+          </Link>
+          <Link
+            href="/estimation"
+            className="bg-white text-primary hover:bg-gray-100 text-sm font-medium tracking-wide px-5 py-2.5 rounded-[10px] transition-all duration-300"
+          >
+            Estimer mes travaux
+          </Link>
+        </div>
 
         {/* Mobile toggle */}
         <button
@@ -114,9 +118,16 @@ export function Header({ forceSolid = false }: HeaderProps) {
               </Link>
             ))}
             <Link
+              href="/partenaire"
+              onClick={() => setMobileOpen(false)}
+              className="mt-2 text-center bg-white text-primary py-3 rounded-[10px] text-sm font-medium tracking-wide hover:bg-gray-100"
+            >
+              Devenir partenaire
+            </Link>
+            <Link
               href="/estimation"
               onClick={() => setMobileOpen(false)}
-              className="mt-2 text-center bg-primary text-primary-foreground py-3 rounded-[10px] text-sm font-medium tracking-wide"
+              className="text-center bg-white text-primary py-3 rounded-[10px] text-sm font-medium tracking-wide hover:bg-gray-100"
             >
               Estimer mes travaux
             </Link>

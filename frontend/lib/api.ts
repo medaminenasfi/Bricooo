@@ -548,6 +548,18 @@ export const api = {
         apiClient.post<ArticleDto>('/admin/articles', data, token),
       update: (id: string, data: UpdateArticleDto, token: string) => 
         apiClient.patch<ArticleDto>(`/admin/articles/${id}`, data, token),
+    },
+
+    // Partners Management
+    partners: {
+      getAll: (token: string, page = 1, take = 50) =>
+        apiClient.get<any>(`/admin/partners?order=DESC&page=${page}&take=${take}`, token),
+      getById: (id: string, token: string) =>
+        apiClient.get<any>(`/admin/partners/${id}`, token),
+      update: (id: string, data: any, token: string) =>
+        apiClient.patch<any>(`/admin/partners/${id}`, data, token),
+      delete: (id: string, token: string) =>
+        apiClient.delete<void>(`/admin/partners/${id}`, token),
     }
   },
 
@@ -580,6 +592,12 @@ export const api = {
       // Try both /leads and /api/leads
       return apiClient.post<LeadDto>('/leads', leadData)
     },
+  },
+
+  // Partners - Public submission
+  partners: {
+    create: (partnerData: any) => 
+      apiClient.post<any>('/partners', partnerData),
   },
 
   // File upload - Updated for NestJS

@@ -13,10 +13,9 @@ const renovationTypes = [
   "Bureau / Local",
 ]
 const budgetOptions = [
-  "Moins de 20 000 DT",
-  "20 000 – 50 000 DT",
-  "50 000 DT +",
-  "À définir",
+  "Standard",
+  "Premium", 
+  "Luxe",
 ]
 
 const stepsLabels = ["Le projet", "Les détails", "Vos coordonnées"]
@@ -172,14 +171,12 @@ export function EstimationWizard() {
 
   const getBudgetBracketMap = (bg: string) => {
     switch (bg) {
-      case "Moins de 20 000 DT":
-        return "MOINS_20000"
-      case "20 000 – 50 000 DT":
-        return "BETWEEN_20000_50000"
-      case "50 000 DT +":
-        return "PLUS_50000"
-      case "À définir":
-        return "A_DEFINIR"
+      case "Standard":
+        return "STANDARD"
+      case "Premium":
+        return "PREMIUM"
+      case "Luxe":
+        return "LUXURY"
       default:
         return "A_DEFINIR"
     }
@@ -472,6 +469,20 @@ export function EstimationWizard() {
                       {b}
                     </button>
                   ))}
+                </div>
+              </div>
+
+              {/* Guarantee Message */}
+              <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
+                <div className="flex items-start gap-3">
+                  <div className="flex-shrink-0 w-5 h-5 rounded-full bg-gray-100 flex items-center justify-center mt-0.5">
+                    <Check className="w-3 h-3 text-black" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-black leading-relaxed">
+                     Tous les travaux réalisés via Hello Brico bénéficient d'une garantie de 1 an pour vous assurer tranquillité et qualité.
+                    </p>
+                  </div>
                 </div>
               </div>
 
