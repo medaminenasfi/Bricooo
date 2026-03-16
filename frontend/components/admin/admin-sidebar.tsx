@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation"
 import {
   LayoutDashboard,
   Users,
+  Handshake,
   FolderKanban,
   FileText,
   Newspaper,
@@ -20,7 +21,7 @@ const roleNavItems = {
   ADMIN: [
     { label: "Dashboard", href: "/admin", icon: LayoutDashboard },
     { label: "Leads", href: "/admin/leads", icon: Users },
-    { label: "Partenaires", href: "/admin/partners", icon: Users },
+    { label: "Partenaires", href: "/admin/partners", icon: Handshake },
     { label: "Projets", href: "/admin/projects", icon: FolderKanban },
     { label: "Devis", href: "/admin/quotes", icon: FileText },
     { label: "Magazine", href: "/admin/magazine", icon: Newspaper },
