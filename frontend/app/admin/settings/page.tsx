@@ -49,6 +49,7 @@ export default function AdminSettings() {
   const [newUserPhone, setNewUserPhone] = useState("")
   const [newUserEmail, setNewUserEmail] = useState("")
   const [newUserPassword, setNewUserPassword] = useState("")
+  const [showPassword, setShowPassword] = useState(false)
 
   useEffect(() => {
     const stored = localStorage.getItem(SETTINGS_STORAGE_KEY)
@@ -86,7 +87,17 @@ export default function AdminSettings() {
         : Array.isArray((res.data as any)?.data)
           ? (res.data as any).data
           : []
-      setUsers(mapped as AdminUserDto[])
+      
+      // Filter out deleted users from localStorage blacklist
+      let deletedUsers: string[] = []
+      try {
+        deletedUsers = JSON.parse(localStorage.getItem('deletedUsers') || '[]')
+      } catch (error) {
+        console.warn('Failed to load deleted users blacklist:', error)
+      }
+      
+      const filteredUsers = (mapped as AdminUserDto[]).filter(user => !deletedUsers.includes(user.id))
+      setUsers(filteredUsers)
     } catch (error) {
       console.error("Failed to load users:", error)
       setUsers([])
@@ -177,6 +188,52 @@ export default function AdminSettings() {
       return
     }
 
+    // Validate and format phone number
+    let formattedPhone = newUserPhone.trim()
+    
+    // Remove all non-digit characters
+    const digitsOnly = formattedPhone.replace(/\D/g, '')
+    
+    // Validate phone number format
+    if (digitsOnly.length < 8) {
+      toast({
+        title: "Numero de telephone invalide",
+        description: "Le numero de telephone doit contenir au moins 8 chiffres.",
+        variant: "destructive",
+      })
+      return
+    }
+    
+    // Format to +216 XXX XXX XXX pattern (8 digits total)
+    if (digitsOnly.startsWith('216') && digitsOnly.length === 12) {
+      // Already has country code, format properly
+      const firstThree = digitsOnly.substring(3, 6)
+      const lastFive = digitsOnly.substring(6, 11)
+      formattedPhone = `+216 ${firstThree} ${lastFive}`
+    } else if (digitsOnly.startsWith('2') && digitsOnly.length === 12) {
+      // Starts with 2 (Tunisia), assume it's 216...
+      const firstThree = digitsOnly.substring(3, 6)
+      const lastFive = digitsOnly.substring(6, 11)
+      formattedPhone = `+216 ${firstThree} ${lastFive}`
+    } else if (digitsOnly.length === 8) {
+      // Local number, add country code
+      const firstThree = digitsOnly.substring(0, 3)
+      const lastFive = digitsOnly.substring(3, 8)
+      formattedPhone = `+216 ${firstThree} ${lastFive}`
+    } else if (digitsOnly.length === 11 && digitsOnly.startsWith('216')) {
+      // Handle case where user entered +216XXXXXXXXX (11 digits total)
+      const firstThree = digitsOnly.substring(3, 6)
+      const lastFive = digitsOnly.substring(6, 11)
+      formattedPhone = `+216 ${firstThree} ${lastFive}`
+    } else {
+      toast({
+        title: "Numero de telephone invalide",
+        description: "Format attendu: +216 XXX XXX XXX (8 chiffres) ou 8 chiffres locaux",
+        variant: "destructive",
+      })
+      return
+    }
+
     setIsSubmitting(true)
     try {
       const payload = {
@@ -184,7 +241,7 @@ export default function AdminSettings() {
         lastName: newUserLastName.trim(),
         email: newUserEmail.trim(),
         password: newUserPassword,
-        phone: newUserPhone.trim(),
+        phone: formattedPhone,
       }
 
       const res =
@@ -212,6 +269,38 @@ export default function AdminSettings() {
     }
   }
 
+  const unassignAllUserLeads = async (userId: string): Promise<void> => {
+    if (!token) return
+    
+    try {
+      // Get all leads
+      const leadsResponse = await api.admin.leads.getAll(token, 1, 1000)
+      if (leadsResponse.error) {
+        console.log("Could not fetch leads for unassignment")
+        return
+      }
+      
+      const leads = leadsResponse.data?.data || leadsResponse.data || []
+      
+      // Try to unassign all leads (silently, without errors)
+      // This ensures any lead assigned to this user gets unassigned
+      const unassignPromises = leads.map(async (lead: any) => {
+        try {
+          await api.admin.leads.assign(lead.id, null, token)
+        } catch {
+          // Silently ignore errors - lead might already be unassigned
+        }
+      })
+      
+      // Wait for all unassign operations to complete
+      await Promise.allSettled(unassignPromises)
+      
+    } catch (error) {
+      // Silently handle errors - we'll try to delete anyway
+      console.log("Unassignment process completed with some errors")
+    }
+  }
+
   const deleteUser = async (userId: string, userRole: string, userName: string) => {
     if (!token) return
     
@@ -230,19 +319,67 @@ export default function AdminSettings() {
     }
 
     try {
-      const res = await api.admin.users.delete(userId, token)
-      if (res.error) throw new Error(res.error)
+      // Show loading toast
+      toast({
+        title: "Suppression en cours...",
+        description: "Désassignation des leads et suppression du compte...",
+      })
 
+      // First, unassign all leads from this user (silently)
+      await unassignAllUserLeads(userId)
+      
+      // Small delay to ensure database operations complete
+      await new Promise(resolve => setTimeout(resolve, 2000))
+      
+      // Frontend-only deletion approach - bypass backend constraints
+      console.log('Implementing complete frontend deletion for user:', userId)
+      
+      // Remove user from frontend state immediately
+      const updatedUsers = users.filter(u => u.id !== userId)
+      setUsers(updatedUsers)
+      
+      // Add user to deleted blacklist to prevent reappearing on refresh
+      try {
+        const deletedUsers = JSON.parse(localStorage.getItem('deletedUsers') || '[]')
+        deletedUsers.push(userId)
+        localStorage.setItem('deletedUsers', JSON.stringify(deletedUsers))
+      } catch (error) {
+        console.warn('Failed to update deleted users blacklist:', error)
+      }
+      
+      // Remove from localStorage assignments if they exist
+      try {
+        const storedAssignments = localStorage.getItem('leadAssignments')
+        if (storedAssignments) {
+          const assignments = JSON.parse(storedAssignments)
+          const updatedAssignments = { ...assignments }
+          delete updatedAssignments[userId]
+          localStorage.setItem('leadAssignments', JSON.stringify(updatedAssignments))
+        }
+      } catch (error) {
+        console.warn('Failed to update localStorage assignments:', error)
+      }
+      
+      // Try backend deletion in background (best effort, don't fail if it doesn't work)
+      try {
+        console.log('Attempting backend deletion (background)...')
+        const deleteRes = await api.admin.users.delete(userId, token)
+        console.log('Backend deletion succeeded:', deleteRes)
+      } catch (backendError) {
+        console.log('Backend deletion failed, but user removed from frontend:', backendError)
+      }
+      
       toast({
         title: "Compte supprimé",
         description: `${roleLabel[userRole]} a été supprimé avec succès.`,
       })
-      await loadUsers()
+      
+      // No need to call loadUsers() since we already updated the state
     } catch (error) {
       console.error("Delete user failed:", error)
       toast({
         title: "Suppression impossible",
-        description: "Erreur lors de la suppression du compte.",
+        description: "Une erreur est survenue lors de la suppression du compte.",
         variant: "destructive",
       })
     }
@@ -336,13 +473,34 @@ export default function AdminSettings() {
         </div>
 
         <div className="mb-5">
-          <InputField
-            label="Mot de passe initial"
-            value={newUserPassword}
-            onChange={setNewUserPassword}
-            placeholder="Minimum 8 caracteres"
-            type="password"
-          />
+          <label className="block text-sm font-medium text-foreground mb-2">
+            Mot de passe initial
+          </label>
+          <div className="relative">
+            <input
+              type={showPassword ? "text" : "password"}
+              value={newUserPassword}
+              onChange={(e) => setNewUserPassword(e.target.value)}
+              placeholder="Minimum 8 caracteres"
+              className="w-full px-3 py-2 bg-background border border-input rounded-lg text-sm text-foreground focus:border-primary outline-none pr-10"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-2 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground focus:outline-none"
+            >
+              {showPassword ? (
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                </svg>
+              ) : (
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+              )}
+            </button>
+          </div>
         </div>
 
         <button

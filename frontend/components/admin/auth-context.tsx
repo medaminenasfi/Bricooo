@@ -37,9 +37,10 @@ const ALLOWED_ADMIN_ROUTES: Record<AdminRole, string[]> = {
     "/admin/quotes",
     "/admin/magazine",
     "/admin/settings",
+    "/admin/notifications",
   ],
-  COMMERCIAL: ["/admin", "/admin/leads", "/admin/projects", "/admin/quotes"],
-  SUPERVISOR: ["/admin", "/admin/projects"],
+  COMMERCIAL: ["/admin", "/admin/leads", "/admin/projects", "/admin/quotes", "/admin/notifications"],
+  SUPERVISOR: ["/admin", "/admin/projects", "/admin/notifications"],
 }
 
 const normalizeRole = (role?: string): AdminRole => {

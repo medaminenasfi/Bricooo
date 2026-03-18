@@ -10,6 +10,7 @@ import {
   FileText,
   Newspaper,
   Settings,
+  Bell,
   LogOut,
   Menu,
   X,
@@ -25,6 +26,7 @@ const roleNavItems = {
     { label: "Projets", href: "/admin/projects", icon: FolderKanban },
     { label: "Devis", href: "/admin/quotes", icon: FileText },
     { label: "Magazine", href: "/admin/magazine", icon: Newspaper },
+    { label: "Notifications", href: "/admin/notifications", icon: Bell },
     { label: "Parametres", href: "/admin/settings", icon: Settings },
   ],
   COMMERCIAL: [
@@ -32,10 +34,12 @@ const roleNavItems = {
     { label: "Leads", href: "/admin/leads", icon: Users },
     { label: "Projets", href: "/admin/projects", icon: FolderKanban },
     { label: "Devis", href: "/admin/quotes", icon: FileText },
+    { label: "Notifications", href: "/admin/notifications", icon: Bell },
   ],
   SUPERVISOR: [
     { label: "Dashboard", href: "/admin", icon: LayoutDashboard },
     { label: "Projets", href: "/admin/projects", icon: FolderKanban },
+    { label: "Notifications", href: "/admin/notifications", icon: Bell },
   ],
 } as const
 
@@ -91,7 +95,7 @@ export function AdminSidebar() {
               HelloBrico
             </span>
             <span className="block text-[9px] sm:text-[10px] uppercase tracking-widest text-white/45 mt-0.5">
-              Admin
+              {user?.role === "COMMERCIAL" ? "Commercial" : user?.role === "SUPERVISOR" ? "Superviseur" : "Admin"}
             </span>
           </Link>
         </div>

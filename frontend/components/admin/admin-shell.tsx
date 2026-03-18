@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation"
 import { AuthProvider } from "./auth-context"
 import { AuthGuard } from "./auth-guard"
 import { AdminSidebar } from "./admin-sidebar"
+import { NotificationBell } from "./notification-bell"
 
 export function AdminShell({ children }: { children: React.ReactNode }) {
   return (
@@ -24,11 +25,21 @@ function AdminContent({ children }: { children: React.ReactNode }) {
     return <>{children}</>
   }
 
-  // All other admin pages get the sidebar layout
+  // All other admin pages get the sidebar layout with header
   return (
     <div className="flex min-h-screen">
       <AdminSidebar />
-      <main className="flex-1 bg-background overflow-y-auto lg:ml-[272px]">{children}</main>
+      <div className="flex-1 lg:ml-[272px]">
+        <header className="bg-card border-b border-border px-6 py-4 flex items-center justify-between sticky top-0 z-10">
+          <div className="flex-1" />
+          <div className="flex items-center gap-4">
+            <NotificationBell />
+          </div>
+        </header>
+        <main className="bg-background overflow-y-auto">
+          {children}
+        </main>
+      </div>
     </div>
   )
 }

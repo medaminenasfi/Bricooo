@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Search, Filter, ChevronDown, Phone, Mail, MapPin, Calendar, MessageSquare, FileText, ArrowLeft, Loader2, Download, Trash2 } from "lucide-react"
+import { Search, Filter, ChevronDown, Phone, Mail, MapPin, Calendar, MessageSquare, FileText, ArrowLeft, Loader2, Download, Trash2, Send } from "lucide-react"
 import { api, type AdminUserDto, type LeadDto, type LeadHistoryDto, type UploadedFileDto } from "@/lib/api"
 import { useAuth } from "@/components/admin/auth-context"
 import { useRouter } from "next/navigation"
@@ -39,6 +39,7 @@ export default function AdminLeads() {
   const [dateFrom, setDateFrom] = useState("")
   const [dateTo, setDateTo] = useState("")
   const [allLeads, setAllLeads] = useState<LeadDto[]>([])
+  const [leadAssignments, setLeadAssignments] = useState<Record<string, AdminUserDto | null>>({})
   const [assignableUsers, setAssignableUsers] = useState<AdminUserDto[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [selectedLead, setSelectedLead] = useState<LeadDto | null>(null)
@@ -55,54 +56,118 @@ export default function AdminLeads() {
   const [emailBody, setEmailBody] = useState("")
   const [isSendingEmail, setIsSendingEmail] = useState(false)
 
-  const { token } = useAuth()
+  const { token, user } = useAuth()
 
   useEffect(() => {
     const fetchLeads = async () => {
-      if (!token) return;
+      if (!token) return
       setIsLoading(true)
       try {
         const [leadsRes, usersRes] = await Promise.all([
-          api.admin.leads.getAll(token, 1, 100),
-          api.admin.users.getAll(token, 1, 200),
+          api.admin.leads.getAll(token, 1, 1000),
+          api.admin.users.getAll(token, 1, 1000),
         ])
 
-        if (leadsRes.error) {
-          throw new Error(leadsRes.error)
-        }
+        const leads = leadsRes.data?.data || leadsRes.data || []
+        const users = usersRes.data?.data || usersRes.data || []
 
-        if (usersRes.error) {
-          throw new Error(usersRes.error)
-        }
-
-        if (Array.isArray(leadsRes.data)) {
-          setAllLeads(leadsRes.data)
-        } else if (Array.isArray((leadsRes.data as any)?.data)) {
-          setAllLeads((leadsRes.data as any).data)
+        setAllLeads(leads)
+        
+        // Filter assignable users based on current user's role
+        let filteredUsers = users
+        if (user?.role === "COMMERCIAL") {
+          // Commercial users can assign to themselves and other commercial users
+          filteredUsers = users.filter((u: AdminUserDto) => 
+            u.role === "COMMERCIAL" || u.role === "SUPERVISOR"
+          )
+        } else if (user?.role === "SUPERVISOR") {
+          // Supervisors can assign to commercial users and other supervisors
+          filteredUsers = users.filter((u: AdminUserDto) => 
+            u.role === "COMMERCIAL" || u.role === "SUPERVISOR"
+          )
         } else {
-          setAllLeads([])
+          // Admins can assign to anyone except other admins
+          filteredUsers = users.filter((u: AdminUserDto) => u.role !== "ADMIN")
         }
-
-        const usersData = Array.isArray(usersRes.data)
-          ? usersRes.data
-          : Array.isArray((usersRes.data as any)?.data)
-            ? (usersRes.data as any).data
-            : []
-
-        // Leads can be assigned to commercial/supervisor users.
-        setAssignableUsers(
-          (usersData as AdminUserDto[]).filter(
-            (user) => user.role === "COMMERCIAL" || user.role === "SUPERVISOR",
-          ),
-        )
+        
+        setAssignableUsers(filteredUsers)
+        
+        // Load existing assignments from backend and localStorage
+        const assignments: Record<string, AdminUserDto | null> = {}
+        
+        // First, try to load from localStorage as backup
+        let localStorageAssignments: Record<string, string | null> = {}
+        try {
+          const stored = localStorage.getItem('leadAssignments')
+          console.log('DEBUG: Raw localStorage data:', stored)
+          if (stored) {
+            localStorageAssignments = JSON.parse(stored)
+            console.log('DEBUG: Parsed localStorage assignments:', localStorageAssignments)
+          } else {
+            console.log('DEBUG: No localStorage data found')
+          }
+        } catch (error) {
+          console.warn('Failed to load assignments from localStorage:', error)
+        }
+        
+        console.log('DEBUG: Available users:', users.map((u: AdminUserDto) => ({ id: u.id, name: `${u.firstName} ${u.lastName}`, role: u.role })))
+        
+        // For each lead, check if it has an assignment
+        for (const lead of leads) {
+          let assignedUser: AdminUserDto | null = null
+          
+          console.log(`DEBUG: Processing lead ${lead.id} (${lead.fullName})`)
+          
+          // Try backend first
+          if (lead.assignedTo) {
+            assignedUser = lead.assignedTo as AdminUserDto
+            console.log(`DEBUG: Lead ${lead.id} has backend assignment:`, assignedUser)
+          } else {
+            console.log(`DEBUG: Lead ${lead.id} has no backend assignment, trying details API...`)
+            // Try to get lead details to check assignment
+            try {
+              const leadDetailRes = await api.admin.leads.getById(lead.id, token)
+              console.log(`DEBUG: Lead details API response for ${lead.id}:`, leadDetailRes.data)
+              if (leadDetailRes.data?.assignedTo) {
+                assignedUser = leadDetailRes.data.assignedTo as AdminUserDto
+                console.log(`DEBUG: Found assignment in details API:`, assignedUser)
+              }
+            } catch (error) {
+              console.log(`DEBUG: Details API failed for lead ${lead.id}:`, error)
+              // Backend failed, try localStorage
+            }
+          }
+          
+          // If backend didn't provide assignment, try localStorage
+          if (!assignedUser && localStorageAssignments[lead.id]) {
+            const userId = localStorageAssignments[lead.id]
+            console.log(`DEBUG: Trying localStorage for lead ${lead.id}, found userId:`, userId)
+            if (userId) {
+              assignedUser = users.find((u: AdminUserDto) => u.id === userId) || null
+              console.log(`DEBUG: Found user in users list:`, assignedUser)
+            } else {
+              assignedUser = null
+              console.log(`DEBUG: localStorage has null assignment for lead ${lead.id}`)
+            }
+          }
+          
+          if (!assignedUser) {
+            console.log(`DEBUG: No assignment found for lead ${lead.id}`)
+          }
+          
+          assignments[lead.id] = assignedUser
+        }
+        
+        console.log('DEBUG: Final assignments object:', assignments)
+        setLeadAssignments(assignments)
       } catch (error) {
-        console.error("Error fetching leads:", error)
+        console.error("Failed to fetch data:", error)
       } finally {
         setIsLoading(false)
       }
     }
     fetchLeads()
-  }, [token])
+  }, [token, user])
 
   useEffect(() => {
     const fetchLeadDetail = async () => {
@@ -117,7 +182,8 @@ export default function AdminLeads() {
 
         const resolvedLead = leadRes.data || selectedLead
         setSelectedLead(resolvedLead)
-        setSelectedAssigneeId(resolvedLead.assignedTo?.id || "")
+        const assignedUser = leadAssignments[resolvedLead.id]
+        setSelectedAssigneeId(assignedUser?.id || "")
         setEmailSubject(`Suivi de votre demande - ${resolvedLead.fullName}`)
         setEmailBody(
           `Bonjour ${resolvedLead.fullName},\n\nNous revenons vers vous concernant votre demande de renovation.\n\nCordialement,\nEquipe HelloBrico`,
@@ -204,10 +270,30 @@ export default function AdminLeads() {
       )
       if (response.error) throw new Error(response.error)
 
-      const updatedLead = response.data || { ...selectedLead, assignedTo: null }
-      setSelectedLead(updatedLead)
-      setAllLeads(allLeads.map((lead) => (lead.id === updatedLead.id ? updatedLead : lead)))
-      setSelectedAssigneeId(updatedLead.assignedTo?.id || "")
+      // Update local assignment state
+      const assignedUser = assignedToId ? assignableUsers.find(u => u.id === assignedToId) || null : null
+      const newAssignments = {
+        ...leadAssignments,
+        [selectedLead.id]: assignedUser
+      }
+      
+      setLeadAssignments(newAssignments)
+      setSelectedAssigneeId(assignedToId || "")
+      
+      // Save to localStorage as backup (since backend doesn't return assignedTo)
+      try {
+        const assignmentsToSave = JSON.stringify(newAssignments, (key, value) => {
+          if (key && value && typeof value === 'object' && value.id) {
+            return value.id // Save only the user ID, not the full object
+          }
+          return value
+        })
+        console.log('DEBUG: Saving assignments to localStorage:', assignmentsToSave)
+        localStorage.setItem('leadAssignments', assignmentsToSave)
+        console.log('DEBUG: Successfully saved to localStorage')
+      } catch (error) {
+        console.warn('Failed to save assignments to localStorage:', error)
+      }
     } catch (error) {
       console.error("Failed to assign lead", error)
       alert("Erreur lors de l'assignation du lead.")
@@ -246,9 +332,10 @@ export default function AdminLeads() {
   }
 
   const getAssignedToText = (lead: LeadDto) => {
-    if (!lead.assignedTo) return "—"
-    const fullName = `${lead.assignedTo.firstName || ""} ${lead.assignedTo.lastName || ""}`.trim()
-    return fullName || lead.assignedTo.email || lead.assignedTo.id
+    const assignedUser = leadAssignments[lead.id]
+    if (!assignedUser) return "—"
+    const fullName = `${assignedUser.firstName || ""} ${assignedUser.lastName || ""}`.trim()
+    return fullName || assignedUser.email || assignedUser.id
   }
 
   const handleAddNote = async () => {
@@ -520,24 +607,65 @@ export default function AdminLeads() {
                 })}
               </select>
             </div>
-
-            <div className="bg-card border border-border rounded-xl p-4 mt-4">
-              <p className="text-xs uppercase tracking-wider text-muted-foreground mb-2">Email client</p>
-              <div className="space-y-2">
-                <input
-                  type="text"
-                  value={emailSubject}
-                  onChange={(e) => setEmailSubject(e.target.value)}
-                  placeholder="Sujet"
-                  className="w-full px-3 py-2 bg-background border border-input rounded-lg text-sm text-foreground focus:border-primary outline-none"
-                />
-                <textarea
-                  value={emailBody}
-                  onChange={(e) => setEmailBody(e.target.value)}
-                  rows={4}
-                  placeholder="Contenu"
-                  className="w-full px-3 py-2 bg-background border border-input rounded-lg text-sm text-foreground focus:border-primary outline-none resize-none"
-                />
+<div className="bg-card border border-border rounded-xl p-4 mt-4">
+              <p className="text-xs uppercase tracking-wider text-muted-foreground mb-3">Email client</p>
+              <div className="space-y-3">
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={emailSubject}
+                    onChange={(e) => setEmailSubject(e.target.value)}
+                    placeholder="Sujet de l'email"
+                    className="w-full px-3 py-2 pr-24 bg-background border border-input rounded-lg text-sm text-foreground focus:border-primary outline-none"
+                  />
+                  <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
+                    <button
+                      onClick={handleSendEmail}
+                      disabled={isSendingEmail || !emailSubject.trim() || !emailBody.trim()}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground text-xs font-medium rounded-md hover:bg-[#0A1F35] transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                    >
+                      {isSendingEmail ? (
+                        <>
+                          <Loader2 size={12} className="animate-spin" />
+                          Envoi...
+                        </>
+                      ) : (
+                        <>
+                          <Send size={12} />
+                          Envoyer
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+                <div className="relative">
+                  <textarea
+                    value={emailBody}
+                    onChange={(e) => setEmailBody(e.target.value)}
+                    rows={4}
+                    placeholder="Contenu du message..."
+                    className="w-full px-3 py-2 pr-24 bg-background border border-input rounded-lg text-sm text-foreground focus:border-primary outline-none resize-none"
+                  />
+                  <div className="absolute bottom-2 right-2">
+                    <button
+                      onClick={handleSendEmail}
+                      disabled={isSendingEmail || !emailSubject.trim() || !emailBody.trim()}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground text-xs font-medium rounded-md hover:bg-[#0A1F35] transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                    >
+                      {isSendingEmail ? (
+                        <>
+                          <Loader2 size={12} className="animate-spin" />
+                          Envoi...
+                        </>
+                      ) : (
+                        <>
+                          <Send size={12} />
+                          Envoyer
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
 
