@@ -622,12 +622,12 @@ export const api = {
   },
 
   email: {
-    send: (to: string, subject: string, content: string, token?: string) =>
-      apiClient.post<{ message: string; error?: string }>(
-        '/email/send',
-        { to, subject, content },
-        token,
-      ),
+    send: (to: string, subject: string, content: string, token?: string) => {
+      const payload = { to, subject, content }
+      return token 
+        ? apiClient.post<any>('/email/send', payload, token)
+        : apiClient.post<any>('/email/send', payload)
+    },
   },
 }
 
