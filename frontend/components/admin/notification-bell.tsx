@@ -20,13 +20,19 @@ export function NotificationBell() {
       setIsLoading(true)
       
       try {
-        // Load from backend API
+        // Load from backend API with timeout
+        const controller = new AbortController()
+        const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 second timeout
+        
         const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/notifications`, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
-          }
+          },
+          signal: controller.signal
         })
+        
+        clearTimeout(timeoutId)
         
         if (res.ok) {
           const data = await res.json()
@@ -57,9 +63,24 @@ export function NotificationBell() {
           setNotifications(notifications)
           const unread = notifications.filter((n: any) => !n.isSeen).length
           setUnreadCount(unread)
+        } else {
+          throw new Error(`HTTP ${res.status}: ${res.statusText}`)
         }
       } catch (error) {
-        console.error("Failed to load notifications from backend:", error)
+        // Handle different types of errors
+        if (error instanceof Error) {
+          if (error.name === 'AbortError') {
+            console.warn("Notifications request timed out")
+          } else if (error.message.includes('Failed to fetch')) {
+            console.warn("Backend not reachable - notifications unavailable")
+          } else {
+            console.warn("Notifications error:", error.message)
+          }
+        } else {
+          console.warn("Unknown notifications error:", error)
+        }
+        
+        // Set empty state on any error
         setNotifications([])
         setUnreadCount(0)
       } finally {
