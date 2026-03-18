@@ -503,6 +503,8 @@ export const api = {
         apiClient.post<AdminUserDto>('/admin/users/commercial', data, token),
       createSupervisor: (data: CreateAdminUserDto, token: string) =>
         apiClient.post<AdminUserDto>('/admin/users/supervisor', data, token),
+      delete: (id: string, token: string) =>
+        apiClient.delete<void>(`/admin/users/${id}`, token),
     },
 
     // Quotes (Devis) Management

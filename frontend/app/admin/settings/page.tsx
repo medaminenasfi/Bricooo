@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
-import { Loader2, Plus, Save, Users } from "lucide-react"
+import { Loader2, Plus, Save, Users, Trash2 } from "lucide-react"
 import {
   api,
   ARTICLE_CATEGORIES,
@@ -212,6 +212,42 @@ export default function AdminSettings() {
     }
   }
 
+  const deleteUser = async (userId: string, userRole: string, userName: string) => {
+    if (!token) return
+    
+    // Prevent deletion of ADMIN users
+    if (userRole === "ADMIN") {
+      toast({
+        title: "Suppression impossible",
+        description: "Les comptes administrateurs principaux ne peuvent pas être supprimés.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    if (!confirm(`Êtes-vous sûr de vouloir supprimer le compte "${userName}" (${roleLabel[userRole]}) ?`)) {
+      return
+    }
+
+    try {
+      const res = await api.admin.users.delete(userId, token)
+      if (res.error) throw new Error(res.error)
+
+      toast({
+        title: "Compte supprimé",
+        description: `${roleLabel[userRole]} a été supprimé avec succès.`,
+      })
+      await loadUsers()
+    } catch (error) {
+      console.error("Delete user failed:", error)
+      toast({
+        title: "Suppression impossible",
+        description: "Erreur lors de la suppression du compte.",
+        variant: "destructive",
+      })
+    }
+  }
+
   return (
     <div className="p-6 lg:p-8 max-w-[1200px] space-y-6">
       <div>
@@ -331,15 +367,28 @@ export default function AdminSettings() {
             <div className="space-y-2">
               {users.map((user) => {
                 const fullName = `${user.firstName || ""} ${user.lastName || ""}`.trim() || "Sans nom"
+                const canDelete = user.role !== "ADMIN"
                 return (
-                  <div key={user.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 rounded-lg border border-border px-3 py-2">
-                    <div>
+                  <div key={user.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 rounded-lg border border-border px-3 py-2">
+                    <div className="flex-1">
                       <p className="text-sm font-medium text-foreground">{fullName}</p>
                       <p className="text-xs text-muted-foreground">{user.email || "-"}</p>
                     </div>
-                    <span className="inline-flex w-fit rounded-full bg-muted px-2.5 py-0.5 text-xs text-muted-foreground">
-                      {roleLabel[user.role || ""] || user.role || "-"}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="inline-flex w-fit rounded-full bg-muted px-2.5 py-0.5 text-xs text-muted-foreground">
+                        {roleLabel[user.role || ""] || user.role || "-"}
+                      </span>
+                      {canDelete && (
+                        <button
+                          onClick={() => deleteUser(user.id, user.role || "", fullName)}
+                          className="inline-flex items-center gap-1 px-2 py-1 text-xs text-red-600 hover:bg-red-50 rounded-md transition-colors"
+                          title={`Supprimer ${roleLabel[user.role || ""]}`}
+                        >
+                          <Trash2 size={12} />
+                          Supprimer
+                        </button>
+                      )}
+                    </div>
                   </div>
                 )
               })}
