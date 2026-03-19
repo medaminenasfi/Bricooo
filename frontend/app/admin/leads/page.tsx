@@ -308,22 +308,22 @@ export default function AdminLeads() {
 
   const handleSendEmail = async () => {
     if (!selectedLead) return
-    if (!emailSubject.trim() || !emailBody.trim()) {
-      alert("Sujet et contenu email requis.")
-      return
-    }
 
     setIsSendingEmail(true)
     try {
+      const subject = `Suivi de votre demande - ${selectedLead.fullName}`
+      const body = `Bonjour ${selectedLead.fullName},\n\nNous revenons vers vous concernant votre demande de renovation.\n\nCordialement,\nEquipe HelloBrico`
+
       const response = await api.email.send(
         selectedLead.email,
-        emailSubject.trim(),
-        emailBody.trim(),
+        subject,
+        body,
         token || undefined,
       )
       if (response.error) throw new Error(response.error)
-      alert("Email envoye avec succes.")
-    } catch (error) {
+
+      alert("Email envoyé avec succès!")
+    } catch (error: any) {
       console.error("Failed to send email", error)
       alert("Erreur lors de l'envoi de l'email.")
     } finally {
@@ -607,7 +607,9 @@ export default function AdminLeads() {
                 })}
               </select>
             </div>
-<div className="bg-card border border-border rounded-xl p-4 mt-4">
+
+            {/* Email client - Commented out for future use if needed
+            <div className="bg-card border border-border rounded-xl p-4 mt-4">
               <p className="text-xs uppercase tracking-wider text-muted-foreground mb-3">Email client</p>
               <div className="space-y-3">
                 <div className="relative">
@@ -668,6 +670,7 @@ export default function AdminLeads() {
                 </div>
               </div>
             </div>
+            */}
 
             {/* Status change */}
             <div className="bg-card border border-border rounded-xl p-4 mt-4">
