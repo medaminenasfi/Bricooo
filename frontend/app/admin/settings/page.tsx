@@ -393,7 +393,7 @@ export default function AdminSettings() {
           Configurez les canaux devis, les categories magazine et les comptes admin.
         </p>
       </div>
-
+{/* 
       <section className="bg-card border border-border rounded-xl p-6">
         <h2 className="text-sm font-semibold text-foreground mb-4">Configuration devis et contact</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -420,7 +420,7 @@ export default function AdminSettings() {
             Enregistrer
           </button>
         </div>
-      </section>
+      </section> */}
 
       <section className="bg-card border border-border rounded-xl p-6">
         <h2 className="text-sm font-semibold text-foreground mb-4">Categories magazine</h2>
