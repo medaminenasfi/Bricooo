@@ -137,17 +137,9 @@ export default function AdminLoginPage() {
 
             {/* Password */}
             <div className="flex flex-col gap-2">
-              <div className="flex items-center justify-between">
-                <label htmlFor="password" className="text-sm font-medium text-foreground">
-                  Mot de passe
-                </label>
-                <button
-                  type="button"
-                  className="text-xs text-accent hover:text-accent/80 transition-colors"
-                >
-                  {"Mot de passe oublie ?"}
-                </button>
-              </div>
+              <label htmlFor="password" className="text-sm font-medium text-foreground">
+                Mot de passe
+              </label>
               <div className="relative">
                 <input
                   id="password"
